@@ -1,6 +1,8 @@
+from typing import Any
 from uuid import uuid4, UUID
 from money import Money
 from enum import Enum
+from json import JSONEncoder
 
 
 class Customer:
@@ -83,3 +85,12 @@ class Factory:
         :type order: object
         """
         self.orders[order.id] = order
+
+
+class OrderEncoder(JSONEncoder):
+    def default(self, o: Order) -> Any:
+        order_dict = {
+            'id': str(o.id),
+            'line_items': o.line_items.__dict__
+        }
+        return o.__dict__

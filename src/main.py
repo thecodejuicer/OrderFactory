@@ -7,14 +7,35 @@ from concurrent.futures import ThreadPoolExecutor
 import threading
 import signal
 from time import sleep
+from confluent_kafka import Producer
+import socket
+
+import os
+import sys
+
+script_directory = os.path.dirname(os.path.abspath(sys.argv[0]))
 
 factories = dict[str, list[Factory]]()
 customers = list[Customer]()
+
+def acked(err, msg):
+    if err is not None:
+        if err is not None:
+            print("Failed to deliver message: %s: %s" % (str(msg), str(err)))
+        else:
+            print("Message produced: %s" % (str(msg)))
 
 
 def mock_orders(exiting):
     customer_count = len(customers)
     factory_count = len(factories)
+
+    kafka_config = {
+        'bootstrap.servers': '127.0.0.1:9092',
+        'client.id': socket.gethostname()
+    }
+
+    producer = Producer(kafka_config)
 
     while not exiting.is_set():
         customer = customers[random.randint(0, customer_count-1)]
@@ -26,12 +47,15 @@ def mock_orders(exiting):
         order.add_line_item(LineItem(item=item, quantity=random.randint(1,10)))
         location.add_order(order)
 
+        producer.produce('orders', key=order.id, value=json.dumps(order), callback=acked)
+        print('produced')
+
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
 
     # Load the factories!
-    with open('resources/factories.json', mode='r') as f:
+    with open(script_directory + '/../resources/factories.json', mode='r') as f:
         factory_list = json.load(f)
 
         for factory in factory_list:
@@ -40,7 +64,7 @@ if __name__ == '__main__':
                 factories[factory['name']].append(Factory(name=factory['name'], location=location))
 
     # And now some customers...
-    with open('resources/customers.json', mode='r') as f:
+    with open(script_directory + '/../resources/customers.json', mode='r') as f:
         customer_list = json.load(f)
         for customer in customer_list:
             customers.append(
