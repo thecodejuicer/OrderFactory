@@ -3,6 +3,7 @@ from uuid import uuid4, UUID
 from money import Money
 from enum import Enum
 from json import JSONEncoder
+import json
 
 
 class Customer:
@@ -88,9 +89,30 @@ class Factory:
 
 
 class OrderEncoder(JSONEncoder):
-    def default(self, o: Order) -> Any:
-        order_dict = {
+    def default(self, ord: Order) -> Any:
+        order = dict()
+        order['id'] = str(ord.id)
+
+        for lineitem in ord.line_items:
+            print(json.dumps(lineitem, cls=LineItemEncoder))
+
+        return order
+
+
+class LineItemEncoder(JSONEncoder):
+    def default(self, o: LineItem) -> Any:
+        lineitem = dict()
+        lineitem['quantity'] = o.quantity
+        lineitem['price'] = str(o.price)
+
+        return lineitem
+
+
+class ItemEncoder(JSONEncoder):
+    def default(self, o: Item) -> Any:
+        return {
             'id': str(o.id),
-            'line_items': o.line_items.__dict__
+            'name': o.name,
+            'price': str(o.price),
+            'descrption': o.description
         }
-        return o.__dict__

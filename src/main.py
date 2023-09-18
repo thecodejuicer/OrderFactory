@@ -32,20 +32,19 @@ def mock_orders(exiting):
 
     kafka_config = {
         'bootstrap.servers': '127.0.0.1:9092',
-        'client.id': socket.gethostname()
     }
 
     producer = Producer(kafka_config)
 
     while not exiting.is_set():
-        customer = customers[random.randint(0, customer_count-1)]
-        factory = factories[list(factories.keys())[random.randint(0, factory_count-1)]]
-        location = factory[random.randint(0, len(factory)-1)]
+        cust = customers[random.randint(0, customer_count-1)]
+        fctr = factories[list(factories.keys())[random.randint(0, factory_count - 1)]]
+        loc = fctr[random.randint(0, len(fctr) - 1)]
 
-        order = Order(customer)
+        order = Order(cust)
         item = Item(name="A thing",price=Money('11.22', 'USD'))
         order.add_line_item(LineItem(item=item, quantity=random.randint(1,10)))
-        location.add_order(order)
+        loc.add_order(order)
 
         producer.produce('orders', key=order.id, value=json.dumps(order), callback=acked)
         print('produced')
