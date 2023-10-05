@@ -1,2 +1,5 @@
 confluent-kafka
 money
+jsonschema
+requests
+protobuf

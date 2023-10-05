@@ -1,6 +1,9 @@
+from typing import Any
 from uuid import uuid4, UUID
 from money import Money
 from enum import Enum
+from json import JSONEncoder
+import json
 
 
 class Customer:
@@ -29,6 +32,20 @@ class LineItem:
     @property
     def price(self) -> Money:
         return self.item.price * self.quantity
+
+    @property
+    def unit_price(self) -> Money:
+        return self.item.price
+
+    @property
+    def as_dict(self) -> dict:
+        line_item = dict()
+        line_item['id'] = str(self.item.id)
+        line_item['name'] = self.item.name
+        line_item['unit_price'] = str(self.unit_price)
+        line_item['quantity'] = self.quantity
+        line_item['price'] = str(self.price)
+        return line_item
 
 
 class OrderStatus(Enum):
@@ -69,17 +86,32 @@ class Order:
     def status(self, status: OrderStatus):
         self._status = status
 
+    @property
+    def as_dict(self):
+        order = dict()
+        order['id'] = str(self.id)
+        # order['line_items'] = [json.loads(json.dumps(li, cls=LineItemEncoder)) for li in self.line_items]
+        order['line_items'] = [li.as_dict for li in self.line_items]
+        order['customer'] = {'id': str(self.customer.id),
+                             'name': self.customer.name,
+                             'email': self.customer.email}
+        order['status'] = self.status.name
+
+        return order
+
 
 class Factory:
     def __init__(self, name: str, location: str):
         self.id = uuid4()
         self.name = name
         self.location = location
-        self.orders = dict[UUID, Order]()
 
-    def add_order(self, order: Order):
-        """
-        Add a new order.
-        :type order: object
-        """
-        self.orders[order.id] = order
+
+class ItemEncoder(JSONEncoder):
+    def default(self, o: Item) -> Any:
+        return {
+            'id': str(o.id),
+            'name': o.name,
+            'price': str(o.price),
+            'descrption': o.description
+        }
