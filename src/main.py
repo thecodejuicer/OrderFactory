@@ -50,8 +50,16 @@ def mock_orders(exiting):
         producer.produce('orders', key=order.id, value=json.dumps(order), callback=acked)
         print('produced')
 
+
 def serialize_order(factory: Factory, order: Order) -> Any:
     order_as_dict = order.as_dict
+    order_as_dict['company'] = {
+        'id': str(factory.id),
+        'name': factory.name,
+        'location': factory.location
+    }
+
+    return json.dumps(order_as_dict)
 
 
 # Press the green button in the gutter to run the script.
@@ -81,12 +89,13 @@ if __name__ == '__main__':
     item = Item(name="A thing",price=Money('11.22', 'USD'))
     order.add_line_item(LineItem(item=item, quantity=random.randint(1,10)))
 
+
     kafka_config = {
         'bootstrap.servers': '127.0.0.1:9092',
     }
 
     producer = Producer(kafka_config)
-    producer.produce('orders', key=str(order.id), value=json.dumps(order.as_dict))
+    producer.produce('orders', key=str(order.id), value=serialize_order(loc, order))
     result = producer.flush()
     print(result)
     # exiting = threading.Event()
