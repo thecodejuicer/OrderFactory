@@ -9,7 +9,11 @@ import threading
 import signal
 from time import sleep
 from confluent_kafka import Producer
+from confluent_kafka.schema_registry import SchemaRegistryClient
+from confluent_kafka.schema_registry.protobuf import ProtobufSerializer
 import socket
+
+import protobuf.order_pb2 as order_pb2
 
 import os
 import sys
@@ -80,6 +84,10 @@ if __name__ == '__main__':
         for customer in customer_list:
             customers.append(
                 Customer(name=f"{customer['first_name']} {customer['last_name']}", email=customer['email']))
+
+    schema_registry_conf = {'url': 'http://127.0.0.1:8081'}
+    schema_registry_client = SchemaRegistryClient(schema_registry_conf)
+    protobuf_serializer = ProtobufSerializer(order_pb2, schema_registry_client, {'use.deprecated.format': False})
 
     cust = customers[random.randint(0, 10)]
     fctr = factories[list(factories.keys())[random.randint(0, 2)]]

@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+message Order {
+  message LineItem {
+    string id = 1;
+    string name = 2;
+    string unit_price = 3;
+    int32 quantity = 4;
+    string price = 5;
+  }
+
+  message Customer {
+    string id = 1;
+    string name = 2;
+    string email = 3;
+  }
+  string id = 1;
+  LineItem line_items = 2;
+  Customer customer = 3;
+  string status = 4;
+}

@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Pizza",
+    "price": "USD 12.99",
+    "cuisine": "Italian"
+  },
+  {
+    "name": "Calzone",
+    "price": "USD 10.43",
+    "cuisine": "Italian"
+  },
+  {
+    "name": "Pasta Bake",
+    "price": "USD 9.99",
+    "cuisine": "Italian"
+  },
+  {
+    "name": "Taco",
+    "price": "USD 3.99",
+    "cuisine": "Hispanic"
+  },
+  {
+    "name": "Burrito",
+    "price": "USD 5.99",
+    "cuisine": "Hispanic"
+  },
+  {
+    "name": "Menudo",
+    "price": "USD 12.12",
+    "cuisine": "Hispanic"
+  },
+  {
+    "name": "Fried Chicken",
+    "price": "USD 5.21",
+    "cuisine": "Southern"
+  },
+  {
+    "name": "Collard Greens",
+    "price": "USD 2.99",
+    "cuisine": "Southern"
+  },
+  {
+    "name": "Grits",
+    "price": "USD 3.16",
+    "cuisine": "Southern"
+  },
+  {
+    "name": "Large Soda",
+    "price": "USD 1.99",
+    "cuisine": "Beverage"
+  },
+  {
+    "name": "Small Soda",
+    "price": "USD 1.49",
+    "cuisine": "Beverage"
+  },
+  {
+    "name": "Sweet Tea",
+    "price": "USD 3.62",
+    "cuisine": "Beverage"
+  }
+]
