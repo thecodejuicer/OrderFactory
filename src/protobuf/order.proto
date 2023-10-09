@@ -14,8 +14,16 @@ message Order {
     string name = 2;
     string email = 3;
   }
+
+  message Factory {
+    string id = 1;
+    string name = 2;
+    string location = 3;
+  }
+
   string id = 1;
-  LineItem line_items = 2;
+  repeated LineItem line_items = 2;
   Customer customer = 3;
   string status = 4;
+  Factory factory = 5;
 }

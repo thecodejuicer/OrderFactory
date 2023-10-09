@@ -3,8 +3,14 @@ from uuid import uuid4, UUID
 from money import Money
 from enum import Enum
 from json import JSONEncoder
+import protobuf.order_pb2 as OrderPbuf
 import json
 
+class Cuisine(Enum):
+    Italian = 1
+    Hispanic = 2
+    Southern = 3
+    Beverage = 4
 
 class Customer:
     def __init__(self, name: str, email: str = None):
@@ -99,12 +105,34 @@ class Order:
 
         return order
 
+    @property
+    def as_protobuf(self):
+        buf = OrderPbuf.Order()
+        buf.id = str(self.id)
+
+        for li in self.line_items:
+            line_item = buf.line_items.add()
+            line_item.id = str(li.id)
+            line_item.name = li.item.name
+            line_item.unit_price = str(li.unit_price)
+            line_item.quantity = li.quantity
+            line_item.price = str(li.price)
+
+        buf.customer.id = str(self.customer.id)
+        buf.customer.name = self.customer.name
+        buf.customer.email = self.customer.email
+
+        buf.status = self.status.name
+
+        return buf
+
 
 class Factory:
-    def __init__(self, name: str, location: str):
+    def __init__(self, name: str, location: str, cuisine: str):
         self.id = uuid4()
         self.name = name
         self.location = location
+        self.cuisine = cuisine
 
 
 class ItemEncoder(JSONEncoder):
