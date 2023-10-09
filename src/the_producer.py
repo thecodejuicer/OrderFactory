@@ -91,9 +91,12 @@ def mock_orders(exiting):
         # Create a new order for a random customer.
         order = Order(customers[random.randint(0, customer_count-1)])
         random_item = item_list[random.randint(0, items_count-1)]
+        random_beverage = beverages[random.randint(0, len(beverages)-1)]
 
         order.add_line_item(LineItem(item=Item(name=random_item.name, price=random_item.price),
                                      quantity=random.randint(1,4)))
+        order.add_line_item(LineItem(item=Item(name=random_beverage.name, price=random_beverage.price),
+                                     quantity=1))
 
         topic = f'{factory_location.name.replace(" ","_").lower()}_orders'
         producer.produce(topic=topic,

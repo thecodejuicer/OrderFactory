@@ -44,18 +44,19 @@ def main(args):
             order = protobuf_deserializer(msg.value(), SerializationContext(topic, MessageField.VALUE))
 
             if order is not None:
-                print("User record {}:\n"
-                      "\tOrder ID: {}\n"
-                      "\tCustomer name: {}\n"
-                      "\tFactory: {}\n"
-                      "\tLocation: {}\n"
-                      "\tItems: {}\n"
-                      .format(msg.key(),
-                              order.id,
-                              order.customer.name,
-                              order.factory.name,
-                              order.factory.location,
-                              order.line_items))
+                print(order)
+                # print("User record {}:\n"
+                #       "\tOrder ID: {}\n"
+                #       "\tCustomer name: {}\n"
+                #       "\tFactory: {}\n"
+                #       "\tLocation: {}\n"
+                #       "\tItems: {}\n"
+                #       .format(msg.key(),
+                #               order.id,
+                #               order.customer.name,
+                #               order.factory.name,
+                #               order.factory.location,
+                #               order.line_items))
         except KeyboardInterrupt:
             break
 
