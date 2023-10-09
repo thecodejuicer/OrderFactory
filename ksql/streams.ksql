@@ -1,0 +1,8 @@
+CREATE STREAM taco_shell_orders_stream
+WITH (kafka_topic='taco_shell_orders', value_format='PROTOBUF');
+
+CREATE STREAM pizza_cabin_orders_stream
+WITH (kafka_topic='pizza_cabin_orders', value_format='PROTOBUF');
+
+CREATE STREAM tennessee_baked_chicken_orders_stream
+WITH (kafka_topic='tennessee_baked_chicken_orders', value_format='PROTOBUF');
