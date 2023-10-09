@@ -1,19 +1,16 @@
 [
   {
     "name": "Pizza Cabin",
-    "item": {"name":  "Pizza", "price":  "12.95"},
     "locations": ["Chicago", "Denver", "New York City", "St. Paul", "Portland", "Gnome", "Jacksonville"],
     "cuisine": "Italian"
   },
   {
     "name": "Taco Shell",
-    "item": {"name":  "Burrito", "price":  "7.99"},
     "locations": ["Chicago", "Denver", "New York City", "St. Paul", "Portland", "Gnome", "Jacksonville", "Fargo", "Menomonie"],
     "cuisine": "Hispanic"
   },
   {
     "name": "Tennessee Baked Chicken",
-    "item": {"name": "Chicken", "price":  "10.50"},
     "locations": ["Bulls Gap", "Gainesboro", "Lookout Mountain","Atlanta", "Denver", "Adams", "St. Paul", "Portland", "Fargo", "Menomonie"],
     "cuisine": "Southern"
   }

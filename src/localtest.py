@@ -1,6 +1,6 @@
 import random
 
-from factory import Order, LineItem, Item, Customer, Factory, OrderEncoder
+from factory import Order, LineItem, Item, Customer, FactoryLocation, OrderEncoder
 from money import Money
 import json
 from concurrent.futures import ThreadPoolExecutor

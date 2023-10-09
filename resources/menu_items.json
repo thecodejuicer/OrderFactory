@@ -1,62 +1,74 @@
 [
   {
     "name": "Pizza",
-    "price": "USD 12.99",
+    "price": "12.99",
+    "currency": "USD",
     "cuisine": "Italian"
   },
   {
     "name": "Calzone",
-    "price": "USD 10.43",
+    "price": "10.43",
+    "currency": "USD",
     "cuisine": "Italian"
   },
   {
     "name": "Pasta Bake",
-    "price": "USD 9.99",
+    "price": "9.99",
+    "currency": "USD",
     "cuisine": "Italian"
   },
   {
     "name": "Taco",
-    "price": "USD 3.99",
+    "price": "3.99",
+    "currency": "USD",
     "cuisine": "Hispanic"
   },
   {
     "name": "Burrito",
-    "price": "USD 5.99",
+    "price": "5.99",
+    "currency": "USD",
     "cuisine": "Hispanic"
   },
   {
     "name": "Menudo",
-    "price": "USD 12.12",
+    "price": "12.12",
+    "currency": "USD",
     "cuisine": "Hispanic"
   },
   {
     "name": "Fried Chicken",
-    "price": "USD 5.21",
+    "price": "5.21",
+    "currency": "USD",
     "cuisine": "Southern"
   },
   {
     "name": "Collard Greens",
-    "price": "USD 2.99",
+    "price": "2.99",
+    "currency": "USD",
     "cuisine": "Southern"
   },
   {
     "name": "Grits",
-    "price": "USD 3.16",
+    "price": "3.16",
+    "currency": "USD",
     "cuisine": "Southern"
   },
   {
     "name": "Large Soda",
-    "price": "USD 1.99",
+    "price": "1.99",
+    "currency": "USD",
     "cuisine": "Beverage"
   },
   {
     "name": "Small Soda",
-    "price": "USD 1.49",
+    "price": "1.49",
+    "currency": "USD",
     "cuisine": "Beverage"
   },
   {
     "name": "Sweet Tea",
-    "price": "USD 3.62",
+    "price": "3.62",
+    "currency": "USD",
     "cuisine": "Beverage"
   }
 ]

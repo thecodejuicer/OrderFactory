@@ -127,7 +127,7 @@ class Order:
         return buf
 
 
-class Factory:
+class FactoryLocation:
     def __init__(self, name: str, location: str, cuisine: str):
         self.id = uuid4()
         self.name = name

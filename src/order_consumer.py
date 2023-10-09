@@ -1,7 +1,8 @@
+import argparse
 import random
 from typing import Any
 
-from factory import Order, LineItem, Item, Customer, Factory
+from factory import Order, LineItem, Item, Customer, FactoryLocation
 from money import Money
 import json
 from concurrent.futures import ThreadPoolExecutor
@@ -23,12 +24,12 @@ from schema import MenuItem
 
 script_directory = os.path.dirname(os.path.abspath(sys.argv[0]))
 
-def main():
-    topic = 'orders'
+def main(args):
+    topic = args.topic
     protobuf_deserializer = ProtobufDeserializer(order_pb2.Order, {'use.deprecated.format': False})
     consumer_conf = {'bootstrap.servers': '127.0.0.1:9092',
                      'group.id': 'py_order_consumer_v0',
-                     'auto.offset.reset': 'latest'}
+                     'auto.offset.reset': 'earliest'}
 
     consumer = Consumer(consumer_conf)
     consumer.subscribe([topic])
@@ -63,4 +64,6 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description="Order Consumer")
+    parser.add_argument('-t', dest="topic",help="Topic name")
+    main(parser.parse_args())

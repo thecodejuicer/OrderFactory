@@ -12,5 +12,5 @@ class City(object):
 class MenuItem(object):
     def __init__(self, name: str, price: Money, cuisine: str):
         self.name = name
-        self.price = Money(price)
+        self.price = price
         self.cuisine = cuisine

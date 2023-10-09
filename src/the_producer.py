@@ -1,7 +1,6 @@
 import random
-from typing import Any
 
-from factory import Order, LineItem, Item, Customer, Factory, Cuisine
+from factory import Order, LineItem, Item, Customer, FactoryLocation, Cuisine
 from money import Money
 import json
 from concurrent.futures import ThreadPoolExecutor
@@ -23,7 +22,7 @@ from schema import MenuItem
 
 script_directory = os.path.dirname(os.path.abspath(sys.argv[0]))
 
-factories = dict[str, list[Factory]]()
+factories = dict[str, list[FactoryLocation]]()
 customers = list[Customer]()
 menu_items = list[MenuItem]()
 
@@ -35,6 +34,20 @@ def acked(err, msg):
         else:
             print("Message produced: %s" % (str(msg)))
 
+def delivery_report(err, msg):
+    """
+    Reports the failure or success of a message delivery.
+
+    Args:
+        err (KafkaError): The error that occurred on None on success.
+        msg (Message): The message that was produced or failed.
+    """
+
+    if err is not None:
+        print("Delivery failed for User record {}: {}".format(msg.key(), err))
+        return
+    print('User record {} successfully produced to {} [{}] at offset {}'.format(
+        msg.key(), msg.topic(), msg.partition(), msg.offset()))
 
 def mock_orders(exiting):
     customer_count = len(customers)
@@ -58,9 +71,8 @@ def mock_orders(exiting):
     string_serializer = StringSerializer()
 
     while not exiting.is_set():
-        cust = customers[random.randint(0, customer_count-1)]
         factory = factories[list(factories.keys())[random.randint(0, factory_count - 1)]]
-        factory_location: Factory = factory[random.randint(0, len(factory) - 1)]
+        factory_location: FactoryLocation = factory[random.randint(0, len(factory) - 1)]
 
         # Figure out which menu items are available based on the "factory's" cuisine.
         match factory_location.cuisine:
@@ -68,20 +80,35 @@ def mock_orders(exiting):
                 item_list = italian
             case Cuisine.Southern.name:
                 item_list = southern
-            case Cuisine.Hispanic:
+            case Cuisine.Hispanic.name:
                 item_list = hispanic
+            case _:
+                item_list = beverages
+
+        items_count = len(item_list)
 
 
+        # Create a new order for a random customer.
+        order = Order(customers[random.randint(0, customer_count-1)])
+        random_item = item_list[random.randint(0, items_count-1)]
 
-        order = Order(cust)
-        item = Item(name="A thing",price=Money('11.22', 'USD'))
-        order.add_line_item(LineItem(item=item, quantity=random.randint(1,10)))
+        order.add_line_item(LineItem(item=Item(name=random_item.name, price=random_item.price),
+                                     quantity=random.randint(1,4)))
 
-        producer.produce('orders', key=order.id, value=json.dumps(order), callback=acked)
-        print('produced')
+        topic = f'{factory_location.name.replace(" ","_").lower()}_orders'
+        producer.produce(topic=topic,
+                         key=string_serializer(str(order.id)),
+                         value=protobuf_serializer(serialize_order(factory_location, order),
+                                                   SerializationContext(topic, MessageField.VALUE))
+                         )
+
+        producer.flush()
+
+        # Add a short pause so it isn't a crazy bombardment
+        sleep(random.uniform(0.03, 0.5))
 
 
-def serialize_order(factory: Factory, order: Order) -> order_pb2.Order:
+def serialize_order(factory: FactoryLocation, order: Order) -> order_pb2.Order:
     """
     Creates a protobuf serialized object from an order and a factory.
     :param factory: The factory the order belongs to.
@@ -104,7 +131,9 @@ def load_items():
     with open(script_directory + '/../resources/menu_items.json') as itemlist:
         menu_item_list = json.load(itemlist)
 
-    return [MenuItem(name = menu_item['name'], price=Money(menu_item['price']), cuisine=menu_item['cuisine'])
+    return [MenuItem(name = menu_item['name'],
+                     price=Money(menu_item['price'], currency=menu_item['currency']),
+                     cuisine=menu_item['cuisine'])
             for menu_item in menu_item_list]
 
 
@@ -115,9 +144,9 @@ def load_factories():
         for factory in factory_list:
             factories[factory['name']] = list()
             for location in factory['locations']:
-                factories[factory['name']].append(Factory(name=factory['name'],
-                                                          location=location,
-                                                          cuisine=factory['cuisine']))
+                factories[factory['name']].append(FactoryLocation(name=factory['name'],
+                                                                  location=location,
+                                                                  cuisine=factory['cuisine']))
 
     return factories
 
@@ -150,37 +179,37 @@ if __name__ == '__main__':
     # fctr = factories[list(factories.keys())[random.randint(0, 2)]]
     # loc = fctr[random.randint(0, len(fctr) - 1)]
 
-    order = Order(cust)
-    item = Item(name="A thing",price=Money('11.22', 'USD'))
-    order.add_line_item(LineItem(item=item, quantity=random.randint(1,10)))
-    order.add_line_item(LineItem(item=item, quantity=random.randint(1,10)))
-
-    kafka_config = {
-        'bootstrap.servers': '127.0.0.1:9092',
-    }
-
-    producer = Producer(kafka_config)
-
-    topic = 'orders'
-    producer.produce(topic=topic,
-                     key=string_serializer(str(order.id)),
-                     value=protobuf_serializer(serialize_order(loc, order), SerializationContext(topic, MessageField.VALUE))
-                     )
-
-    producer.flush()
-
-    # exiting = threading.Event()
+    # order = Order(cust)
+    # item = Item(name="A thing",price=Money('11.22', 'USD'))
+    # order.add_line_item(LineItem(item=item, quantity=random.randint(1,10)))
+    # order.add_line_item(LineItem(item=item, quantity=random.randint(1,10)))
     #
-    # def signal_handler(signum, frame):
-    #     exiting.set()
+    # kafka_config = {
+    #     'bootstrap.servers': '127.0.0.1:9092',
+    # }
+    #
+    # producer = Producer(kafka_config)
 
-    # signal.signal(signal.SIGTERM, signal_handler)
+    # topic = 'orders'
+    # producer.produce(topic=topic,
+    #                  key=string_serializer(str(order.id)),
+    #                  value=protobuf_serializer(serialize_order(loc, order), SerializationContext(topic, MessageField.VALUE))
+    #                  )
     #
-    # with ThreadPoolExecutor(max_workers=1) as executor:
-    #     executor.submit(mock_orders, exiting)
-    #
-    #     try:
-    #         while not exiting.is_set():
-    #             pass
-    #     except KeyboardInterrupt:
-    #         exiting.set()
+    # producer.flush()
+
+    exiting = threading.Event()
+
+    def signal_handler(signum, frame):
+        exiting.set()
+
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        executor.submit(mock_orders, exiting)
+
+        try:
+            while not exiting.is_set():
+                pass
+        except KeyboardInterrupt:
+            exiting.set()
