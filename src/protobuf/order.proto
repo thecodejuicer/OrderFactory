@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+message Order {
+  message LineItem {
+    string id = 1;
+    string name = 2;
+    string unit_price = 3;
+    int32 quantity = 4;
+    string price = 5;
+  }
+
+  message Customer {
+    string id = 1;
+    string name = 2;
+    string email = 3;
+  }
+
+  message Factory {
+    string id = 1;
+    string name = 2;
+    string city = 3;
+    string state = 4;
+    string zip_code = 5;
+  }
+
+  string id = 1;
+  repeated LineItem line_items = 2;
+  Customer customer = 3;
+  string status = 4;
+  Factory factory = 5;
+}

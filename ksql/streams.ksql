@@ -1,0 +1,30 @@
+CREATE STREAM taco_shell_orders_stream
+WITH (kafka_topic='taco_shell_orders', value_format='PROTOBUF');
+
+CREATE STREAM pizza_cabin_orders_stream
+WITH (kafka_topic='pizza_cabin_orders', value_format='PROTOBUF');
+
+CREATE STREAM tennessee_baked_chicken_orders_stream
+WITH (kafka_topic='tennessee_baked_chicken_orders', value_format='PROTOBUF');
+
+CREATE STREAM new_orders_stream
+WITH (
+    KAFKA_TOPIC = 'all_new_orders_stream',
+    VALUE_FORMAT = 'PROTOBUF'
+) AS
+SELECT factory->name,
+       factory->city,
+       factory->state,
+       factory->zip_code
+FROM taco_shell_orders_stream
+WHERE status = 'NEW'
+emit changes;
+
+INSERT INTO new_orders_stream
+SELECT factory->name,
+       factory->city,
+       factory->state,
+       factory->zip_code
+FROM tennessee_baked_chicken_orders_stream
+WHERE status = 'NEW'
+emit changes;

@@ -1,16 +1,24 @@
+import uuid
 from typing import Any
 from uuid import uuid4, UUID
 from money import Money
 from enum import Enum
 from json import JSONEncoder
+import protobuf.order_pb2 as OrderPbuf
 import json
 
+class Cuisine(Enum):
+    Italian = 1
+    Hispanic = 2
+    Southern = 3
+    Beverage = 4
 
 class Customer:
-    def __init__(self, name: str, email: str = None):
-        self.id = uuid4()
+    def __init__(self, name: str, email: str, zip_code: str):
+        self.id = uuid.uuid5(uuid.NAMESPACE_URL, email)
         self.name = name
         self.email = email
+        self.zip_code = zip_code
 
 
 class Item:
@@ -99,19 +107,33 @@ class Order:
 
         return order
 
+    @property
+    def as_protobuf(self):
+        buf = OrderPbuf.Order()
+        buf.id = str(self.id)
 
-class Factory:
-    def __init__(self, name: str, location: str):
+        for li in self.line_items:
+            line_item = buf.line_items.add()
+            line_item.id = str(li.id)
+            line_item.name = li.item.name
+            line_item.unit_price = str(li.unit_price)
+            line_item.quantity = li.quantity
+            line_item.price = str(li.price)
+
+        buf.customer.id = str(self.customer.id)
+        buf.customer.name = self.customer.name
+        buf.customer.email = self.customer.email
+
+        buf.status = self.status.name
+
+        return buf
+
+
+class FactoryLocation:
+    def __init__(self, name: str, state: str, city: str, zip_code: str, cuisine: str):
         self.id = uuid4()
         self.name = name
-        self.location = location
-
-
-class ItemEncoder(JSONEncoder):
-    def default(self, o: Item) -> Any:
-        return {
-            'id': str(o.id),
-            'name': o.name,
-            'price': str(o.price),
-            'descrption': o.description
-        }
+        self.state = state
+        self.city = city
+        self.zip_code = zip_code
+        self.cuisine = cuisine
