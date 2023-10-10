@@ -113,7 +113,7 @@ def mock_orders(exiting_event):
         producer.flush()
 
         # Add a short pause, so it isn't a crazy bombardment
-        sleep(random.uniform(0.03, 0.5))
+        # sleep(random.uniform(0.03, 0.5))
 
 
 def serialize_order(factory: FactoryLocation, order: Order) -> order_pb2.Order:
