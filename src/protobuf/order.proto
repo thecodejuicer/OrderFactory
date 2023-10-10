@@ -18,7 +18,9 @@ message Order {
   message Factory {
     string id = 1;
     string name = 2;
-    string location = 3;
+    string city = 3;
+    string state = 4;
+    string zip_code = 5;
   }
 
   string id = 1;

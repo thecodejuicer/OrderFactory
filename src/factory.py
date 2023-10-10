@@ -1,3 +1,4 @@
+import uuid
 from typing import Any
 from uuid import uuid4, UUID
 from money import Money
@@ -13,10 +14,11 @@ class Cuisine(Enum):
     Beverage = 4
 
 class Customer:
-    def __init__(self, name: str, email: str = None):
-        self.id = uuid4()
+    def __init__(self, name: str, email: str, zip_code: str):
+        self.id = uuid.uuid5(uuid.NAMESPACE_URL, email)
         self.name = name
         self.email = email
+        self.zip_code = zip_code
 
 
 class Item:
@@ -128,18 +130,10 @@ class Order:
 
 
 class FactoryLocation:
-    def __init__(self, name: str, location: str, cuisine: str):
+    def __init__(self, name: str, state: str, city: str, zip_code: str, cuisine: str):
         self.id = uuid4()
         self.name = name
-        self.location = location
+        self.state = state
+        self.city = city
+        self.zip_code = zip_code
         self.cuisine = cuisine
-
-
-class ItemEncoder(JSONEncoder):
-    def default(self, o: Item) -> Any:
-        return {
-            'id': str(o.id),
-            'name': o.name,
-            'price': str(o.price),
-            'descrption': o.description
-        }

@@ -1,17 +1,14 @@
 [
   {
     "name": "Pizza Cabin",
-    "locations": ["Chicago", "Denver", "New York City", "St. Paul", "Portland", "Gnome", "Jacksonville"],
     "cuisine": "Italian"
   },
   {
     "name": "Taco Shell",
-    "locations": ["Chicago", "Denver", "New York City", "St. Paul", "Portland", "Gnome", "Jacksonville", "Fargo", "Menomonie"],
     "cuisine": "Hispanic"
   },
   {
     "name": "Tennessee Baked Chicken",
-    "locations": ["Bulls Gap", "Gainesboro", "Lookout Mountain","Atlanta", "Denver", "Adams", "St. Paul", "Portland", "Fargo", "Menomonie"],
     "cuisine": "Southern"
   }
 ]
