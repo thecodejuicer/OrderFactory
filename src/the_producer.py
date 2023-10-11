@@ -113,7 +113,7 @@ def mock_orders(exiting_event):
         producer.flush()
 
         # Add a short pause, so it isn't a crazy bombardment
-        # sleep(random.uniform(0.03, 0.5))
+        sleep(random.uniform(0.03, 0.5))
 
 
 def serialize_order(factory: FactoryLocation, order: Order) -> order_pb2.Order:
@@ -210,10 +210,11 @@ if __name__ == '__main__':
     signal.signal(signal.SIGTERM, signal_handler)
 
     with ThreadPoolExecutor(max_workers=1) as executor:
-        executor.submit(mock_orders, exiting)
+        future = executor.submit(mock_orders, exiting)
 
         try:
             while not exiting.is_set():
                 pass
         except KeyboardInterrupt:
+            print(future.result())
             exiting.set()

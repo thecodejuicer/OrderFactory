@@ -7,6 +7,7 @@ message Order {
     string unit_price = 3;
     int32 quantity = 4;
     string price = 5;
+    string currency = 6;
   }
 
   message Customer {

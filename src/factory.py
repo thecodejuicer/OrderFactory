@@ -13,6 +13,7 @@ class Cuisine(Enum):
     Southern = 3
     Beverage = 4
 
+
 class Customer:
     def __init__(self, name: str, email: str, zip_code: str):
         self.id = uuid.uuid5(uuid.NAMESPACE_URL, email)
@@ -44,6 +45,10 @@ class LineItem:
     @property
     def unit_price(self) -> Money:
         return self.item.price
+
+    @property
+    def currency(self) -> str:
+        return self.item.price.currency
 
     @property
     def as_dict(self) -> dict:
@@ -116,10 +121,10 @@ class Order:
             line_item = buf.line_items.add()
             line_item.id = str(li.id)
             line_item.name = li.item.name
-            line_item.unit_price = str(li.unit_price)
+            line_item.unit_price = str(li.unit_price.amount)
             line_item.quantity = li.quantity
-            line_item.price = str(li.price)
-
+            line_item.price = str(li.price.amount)
+            line_item.currency = li.currency
         buf.customer.id = str(self.customer.id)
         buf.customer.name = self.customer.name
         buf.customer.email = self.customer.email
