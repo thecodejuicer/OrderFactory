@@ -4,7 +4,8 @@ from uuid import uuid4, UUID
 from money import Money
 from enum import Enum
 from json import JSONEncoder
-import protobuf.order_pb2 as OrderPbuf
+import protobuf.order_pb2 as order_pb2
+import protobuf.customer_pb2 as customer_pb2
 import json
 
 class Cuisine(Enum):
@@ -20,6 +21,15 @@ class Customer:
         self.name = name
         self.email = email
         self.zip_code = zip_code
+
+    def as_protobuf(self):
+        buf = customer_pb2.Customer()
+        buf.id = str(self.id)
+        buf.name = self.name
+        buf.email = self.email
+        buf.zip_code = self.zip_code
+
+        return buf
 
 
 class Item:
@@ -114,7 +124,7 @@ class Order:
 
     @property
     def as_protobuf(self):
-        buf = OrderPbuf.Order()
+        buf = order_pb2.Order()
         buf.id = str(self.id)
 
         for li in self.line_items:
