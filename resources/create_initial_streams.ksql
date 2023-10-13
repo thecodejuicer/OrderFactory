@@ -1,0 +1,21 @@
+CREATE STREAM IF NOT EXISTS taco_shell_orders_stream( order_id VARCHAR KEY ) WITH( kafka_topic='taco_shell_orders', value_format='PROTOBUF', key_format='KAFKA');
+CREATE STREAM IF NOT EXISTS pizza_cabin_orders_stream ( order_id VARCHAR KEY ) WITH (kafka_topic='pizza_cabin_orders', value_format='PROTOBUF', key_format='KAFKA');
+CREATE STREAM IF NOT EXISTS tennessee_baked_chicken_orders_stream ( order_id VARCHAR KEY ) WITH (kafka_topic='tennessee_baked_chicken_orders', value_format='PROTOBUF', key_format='KAFKA');
+
+CREATE OR REPLACE STREAM all_orders_stream WITH ( KAFKA_TOPIC = 'all_orders_stream', VALUE_FORMAT = 'PROTOBUF', KEY_FORMAT = 'KAFKA' ) AS SELECT * FROM taco_shell_orders_stream emit changes;
+INSERT INTO all_orders_stream SELECT * FROM pizza_cabin_orders_stream emit changes;
+INSERT INTO all_orders_stream SELECT * FROM tennessee_baked_chicken_orders_stream emit changes;
+
+CREATE TABLE IF NOT EXISTS customer_order_status_tbl ( order_id VARCHAR PRIMARY KEY, status VARCHAR, customer STRUCT<id VARCHAR, name VARCHAR, email VARCHAR>, factory STRUCT<name VARCHAR> ) WITH ( KAFKA_TOPIC = 'all_orders_stream', VALUE_FORMAT = 'PROTOBUF', KEY_FORMAT = 'KAFKA' );
+CREATE OR REPLACE TABLE customer_order_statuses WITH ( KAFKA_TOPIC = 'customer_order_statuses', VALUE_FORMAT = 'PROTOBUF', KEY_FORMAT = 'KAFKA' ) AS SELECT order_id, status, customer->id AS customer_id, customer->name AS customer_name, customer->email AS customer_email, factory->name AS factory_name FROM customer_order_status_tbl;
+
+CREATE SINK CONNECTOR `mongodb_sink`
+WITH ( 
+  "connector.class"="com.mongodb.kafka.connect.MongoSinkConnector",
+  "connection.uri"="mongodb://localroot:asjf84q24jtr@mongo:27017",
+  "database"="kafka",
+  "collection"="all_orders",
+  "topics"="all_orders_stream",
+  "value.converter"="io.confluent.connect.protobuf.ProtobufConverter",
+  "value.converter.schema.registry.url"="http://schema-registry:8081"
+);

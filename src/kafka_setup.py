@@ -1,10 +1,12 @@
-import traceback
-
-from confluent_kafka import KafkaError
-from confluent_kafka.schema_registry import SchemaRegistryClient, Schema
-from confluent_kafka.admin import AdminClient, NewTopic, ClusterMetadata
 import os
 import sys
+import traceback
+
+import docker
+import requests
+from confluent_kafka import KafkaError
+from confluent_kafka.admin import AdminClient, NewTopic, ClusterMetadata
+from confluent_kafka.schema_registry import SchemaRegistryClient, Schema
 
 script_directory = os.path.dirname(os.path.abspath(sys.argv[0]))
 
@@ -62,24 +64,30 @@ def create_topics(admin_client):
 
 
 def create_ksql_objects():
-    # client = KSQLdbClient('http://localhost:8088')
+    """
+    Since the ksql libraries for Python are outdated, this runs the ksqldb cli with a script.
+    :return:
+    """
+    client = docker.from_env()
+    ksql_container = client.containers.get('ksqldb-cli')
+    result = ksql_container.exec_run("ksql --file /var/scripts/create_initial_streams.ksql http://ksqldb-server:8088")
 
-    ksql_queries = [
-        "CREATE STREAM IF NOT EXISTS taco_shell_orders_stream( order_id VARCHAR KEY ) WITH( kafka_topic='taco_shell_orders', value_format='PROTOBUF', key_format='KAFKA');",
-        "CREATE STREAM IF NOT EXISTS  pizza_cabin_orders_stream ( order_id VARCHAR KEY ) WITH (kafka_topic='pizza_cabin_orders', value_format='PROTOBUF', key_format='KAFKA');",
-        "CREATE STREAM IF NOT EXISTS tennessee_baked_chicken_orders_stream ( order_id VARCHAR KEY ) WITH (kafka_topic='tennessee_baked_chicken_orders', value_format='PROTOBUF', key_format='KAFKA');",
-        "CREATE OR REPLACE STREAM all_orders_stream WITH ( KAFKA_TOPIC = 'all_orders_stream', VALUE_FORMAT = 'PROTOBUF', KEY_FORMAT = 'KAFKA' ) AS SELECT * FROM taco_shell_orders_stream emit changes;",
-        "INSERT INTO all_orders_stream SELECT * FROM pizza_cabin_orders_stream emit changes;",
-        "INSERT INTO all_orders_stream SELECT * FROM tennessee_baked_chicken_orders_stream emit changes;",
-        "CREATE TABLE IF NOT EXISTS customer_order_status_tbl ( order_id VARCHAR PRIMARY KEY, status VARCHAR, customer STRUCT<id VARCHAR, name VARCHAR, email VARCHAR>, factory STRUCT<name VARCHAR> ) WITH ( KAFKA_TOPIC = 'all_orders_stream', VALUE_FORMAT = 'PROTOBUF', KEY_FORMAT = 'KAFKA' );",
-        "CREATE OR REPLACE TABLE customer_order_statuses WITH ( KAFKA_TOPIC = 'customer_order_statuses', VALUE_FORMAT = 'PROTOBUF', KEY_FORMAT = 'KAFKA' ) AS SELECT order_id, status, customer->id AS customer_id, customer->name AS customer_name, customer->email AS customer_email, factory->name AS factory_name FROM customer_order_status_tbl;"
-    ]
+    print(result.output)
 
-    # for query in ksql_queries:
-    #     client.ksql(query)
+
+def create_connectors():
+    endpoint = 'http://localhost:8083/connectors'
+
+    with open(script_directory + '\..\kafka_connect\mongodb.json') as cfile:
+        connect_config = cfile.read()
+        response = requests.put(url=endpoint + '/mongodb_sink/config', data=connect_config,
+                                headers={'Content-Type': 'application/json'})
+
+        print(response.text)
 
 
 if __name__ == '__main__':
-    client = AdminClient({'bootstrap.servers': 'localhost:9092'})
-    create_topics(client)
-    # create_ksql_objects()
+    admin_client = AdminClient({'bootstrap.servers': 'localhost:9092'})
+    create_topics(admin_client)
+    create_ksql_objects()
+    create_connectors()

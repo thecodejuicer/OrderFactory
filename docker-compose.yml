@@ -68,7 +68,9 @@ services:
       KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: 'true'
 
   ksqldb-cli:
-    image: confluentinc/cp-ksqldb-cli:7.5.0
+    #    image: confluentinc/cp-ksqldb-cli:7.5.0
+    build:
+      dockerfile: dockerfiles/ksql_cli.Dockerfile
     container_name: ksqldb-cli
     depends_on:
       - broker
@@ -99,8 +101,13 @@ services:
       - 9080:8080
     depends_on:
       - broker
+      - ksqldb-server
+      - connect
+      - schema-registry
     environment:
       DYNAMIC_CONFIG_ENABLED: 'true'
+    volumes:
+      - ./resources/dynamic_config.yml:/etc/kafkaui/dynamic_config.yaml
 
   connect:
     build:
@@ -134,6 +141,7 @@ services:
     restart: always
     environment:
       MONGO_INITDB_ROOT_USERNAME: localroot
+      #  If you want to change the mongo password, make sure you update it in kafka_connect/mongodb.json as well.
       MONGO_INITDB_ROOT_PASSWORD: asjf84q24jtr
 
   mongo-express:
