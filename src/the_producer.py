@@ -48,8 +48,9 @@ def delivery_report(err, msg):
     if err is not None:
         print("Delivery failed for User record {}: {}".format(msg.key(), err))
         return
-    print('User record {} successfully produced to {} [{}] at offset {}'.format(
-        msg.key(), msg.topic(), msg.partition(), msg.offset()))
+
+    # print('User record {} successfully produced to {} [{}] at offset {}'.format(
+    #     msg.key(), msg.topic(), msg.partition(), msg.offset()))
 
 
 def get_protobuf_serializer(protobuf_schema) -> ProtobufSerializer:
@@ -203,21 +204,10 @@ def load_customers() -> list[Customer]:
     with open(script_directory + '/../resources/customers_with_zip.json', mode='r') as f:
         customer_list = json.load(f)
 
-        producer = Producer(kafka_config)
-
-        protobuf_serializer = get_protobuf_serializer(customer_pb2.Customer)
-        string_serializer = StringSerializer()
-        topic = 'customers'
         for customer in customer_list:
             customer_obj = Customer(name=f"{customer['first_name']} {customer['last_name']}", email=customer['email'],
                                     zip_code=customer['zip_code'])
             customers.append(customer_obj)
-
-            producer.produce(topic=topic, key=string_serializer(str(customer_obj.id)),
-                             value=protobuf_serializer(customer_obj.as_protobuf(),
-                                                       SerializationContext(topic, MessageField.VALUE)))
-            producer.flush()
-
 
     return customers
 

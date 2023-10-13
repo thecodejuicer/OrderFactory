@@ -1,14 +1,38 @@
+import json
 import os
 import sys
 import traceback
 
 import docker
 import requests
-from confluent_kafka import KafkaError
+from confluent_kafka import KafkaError, Producer
 from confluent_kafka.admin import AdminClient, NewTopic, ClusterMetadata
 from confluent_kafka.schema_registry import SchemaRegistryClient, Schema
+from confluent_kafka.schema_registry.protobuf import ProtobufSerializer
+from confluent_kafka.serialization import SerializationContext, MessageField, StringSerializer
+
+import protobuf.customer_pb2 as customer_pb2
+from factory import Customer
 
 script_directory = os.path.dirname(os.path.abspath(sys.argv[0]))
+
+kafka_config = {
+    'bootstrap.servers': '127.0.0.1:9092',
+}
+
+def delivery_report(err, msg):
+    """
+    Reports the failure of a message delivery.
+
+    Args:
+        err (KafkaError): The error that occurred on None on success.
+        msg (Message): The message that was produced or failed.
+    """
+
+    if err is not None:
+        print("Delivery failed for User record {}: {}".format(msg.key(), err))
+        return
+
 
 def create_topics(admin_client):
     with open(script_directory + '\protobuf\order.proto') as schema_file:
@@ -19,7 +43,7 @@ def create_topics(admin_client):
 
     topics_to_create = [
         {'name': 'customers', 'config': NewTopic('customers', num_partitions=10,
-                                                 config={'cleanup.policy': 'compact', 'delete.retention.ms': '60000'}),
+                                                 config={'cleanup.policy': 'compact'}),
          'schema': customer_schema},
         {'name': 'pizza_cabin_orders', 'config': NewTopic('pizza_cabin_orders', num_partitions=10),
          'schema': orders_schema},
@@ -30,7 +54,7 @@ def create_topics(admin_client):
          'schema': orders_schema}
     ]
 
-    exiting_topics: ClusterMetadata = client.list_topics(timeout=10)
+    exiting_topics: ClusterMetadata = admin_client.list_topics(timeout=10)
 
     topic_list = []
     schema_list = []
@@ -42,7 +66,7 @@ def create_topics(admin_client):
                 schema_list.append({'subject_name': topic['name'] + '-value', 'schema': topic['schema']})
 
     if len(topic_list) > 0:
-        futures = client.create_topics(topic_list)
+        futures = admin_client.create_topics(topic_list)
 
         try:
             for k, future in futures.items():
@@ -86,8 +110,37 @@ def create_connectors():
         print(response.text)
 
 
+def get_protobuf_serializer(protobuf_schema) -> ProtobufSerializer:
+    schema_registry_conf = {'url': 'http://127.0.0.1:8081'}
+    schema_registry_client = SchemaRegistryClient(schema_registry_conf)
+
+    return ProtobufSerializer(protobuf_schema, schema_registry_client, {'use.deprecated.format': False})
+
+
+def seed_data():
+    with open(script_directory + '/../resources/customers_with_zip.json', mode='r') as f:
+        customer_list = json.load(f)
+
+        producer = Producer(kafka_config)
+
+        protobuf_serializer = get_protobuf_serializer(customer_pb2.Customer)
+        string_serializer = StringSerializer()
+        topic = 'customers'
+        for customer in customer_list:
+            customer_obj = Customer(name=f"{customer['first_name']} {customer['last_name']}", email=customer['email'],
+                                    zip_code=customer['zip_code'])
+
+            producer.produce(topic=topic, key=string_serializer(str(customer_obj.id)),
+                             value=protobuf_serializer(customer_obj.as_protobuf(),
+                                                       SerializationContext(topic, MessageField.VALUE)),
+                             callback=delivery_report)
+
+        producer.flush()
+
+
 if __name__ == '__main__':
     admin_client = AdminClient({'bootstrap.servers': 'localhost:9092'})
     create_topics(admin_client)
     create_ksql_objects()
     create_connectors()
+    seed_data()
