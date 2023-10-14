@@ -1,0 +1,29 @@
+CREATE STREAM alL_line_items AS
+SELECT order_id,
+       EXPLODE(line_items) AS line_item
+FROM all_orders_stream
+EMIT CHANGES;
+
+-- Simple sum of line items by order.
+SELECT
+    order_id,
+    SUM(CAST(line_item->price AS DECIMAL(12,2))) AS total_price
+FROM all_line_items
+GROUP BY
+    order_id
+emit changes limit 10;
+
+-- Sum of line items by order, with more details.
+SELECT
+    a.order_id,
+    SUM(CAST(a.line_item->price AS DECIMAL(12,2))) AS total_price,
+    o.customer,
+    o.line_items
+FROM all_line_items a
+INNER JOIN all_orders_stream o WITHIN 1 HOURS
+    ON a.order_id = o.order_id
+GROUP BY
+    a.order_id,
+    o.customer,
+    o.line_items
+emit changes;

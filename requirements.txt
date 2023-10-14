@@ -3,3 +3,9 @@ money
 jsonschema
 requests
 protobuf
+fastapi
+uvicorn[standard]
+pydantic
+pymongo[srv]
+docker
+jinja2

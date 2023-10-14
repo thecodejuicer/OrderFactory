@@ -1,0 +1,19 @@
+auth:
+  type: DISABLED
+kafka:
+  clusters:
+    - bootstrapServers: broker:29092
+      name: Local
+
+      kafkaConnect:
+        - address: http://connect:8083
+          name: Local
+
+      ksqldbServer: http://ksqldb-server:8088
+
+      properties: { }
+      readOnly: false
+      schemaRegistry: http://schema-registry:8081
+rbac:
+  roles: [ ]
+webclient: { }

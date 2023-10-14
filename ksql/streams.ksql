@@ -1,30 +1,82 @@
-CREATE STREAM taco_shell_orders_stream
-WITH (kafka_topic='taco_shell_orders', value_format='PROTOBUF');
-
-CREATE STREAM pizza_cabin_orders_stream
-WITH (kafka_topic='pizza_cabin_orders', value_format='PROTOBUF');
-
-CREATE STREAM tennessee_baked_chicken_orders_stream
-WITH (kafka_topic='tennessee_baked_chicken_orders', value_format='PROTOBUF');
-
-CREATE STREAM new_orders_stream
+-- Preliminary streams
+CREATE STREAM taco_shell_orders_stream (
+    order_id VARCHAR KEY
+)
 WITH (
-    KAFKA_TOPIC = 'all_new_orders_stream',
-    VALUE_FORMAT = 'PROTOBUF'
+    kafka_topic='taco_shell_orders',
+    value_format='PROTOBUF',
+    key_format='KAFKA');
+
+CREATE STREAM pizza_cabin_orders_stream (
+    order_id VARCHAR KEY
+)
+WITH (kafka_topic='pizza_cabin_orders',
+      value_format='PROTOBUF',
+      key_format='KAFKA');
+
+CREATE STREAM tennessee_baked_chicken_orders_stream (
+    order_id VARCHAR KEY
+)
+WITH (kafka_topic='tennessee_baked_chicken_orders',
+      value_format='PROTOBUF',
+      key_format='KAFKA');
+
+-- Streams for joining all the orders into a single topic.
+CREATE STREAM all_orders_stream
+WITH (
+    KAFKA_TOPIC = 'all_orders_stream',
+    VALUE_FORMAT = 'PROTOBUF',
+    KEY_FORMAT = 'KAFKA'
 ) AS
-SELECT factory->name,
-       factory->city,
-       factory->state,
-       factory->zip_code
+SELECT *
 FROM taco_shell_orders_stream
-WHERE status = 'NEW'
 emit changes;
 
-INSERT INTO new_orders_stream
-SELECT factory->name,
-       factory->city,
-       factory->state,
-       factory->zip_code
-FROM tennessee_baked_chicken_orders_stream
-WHERE status = 'NEW'
+INSERT INTO all_orders_stream
+SELECT *
+FROM pizza_cabin_orders_stream
 emit changes;
+
+INSERT INTO all_orders_stream
+SELECT *
+FROM tennessee_baked_chicken_orders_stream
+emit changes;
+
+-- Customer order stuffs
+CREATE TABLE customer_order_status_tbl (
+    order_id VARCHAR PRIMARY KEY,
+    status VARCHAR,
+    customer STRUCT<id VARCHAR,
+                    name VARCHAR,
+                    email VARCHAR>,
+    factory STRUCT<name VARCHAR>
+) WITH (
+    KAFKA_TOPIC = 'all_orders_stream',
+    VALUE_FORMAT = 'PROTOBUF',
+    KEY_FORMAT = 'KAFKA'
+);
+
+CREATE TABLE customer_order_statuses
+WITH (
+    KAFKA_TOPIC = 'customer_order_statuses',
+    VALUE_FORMAT = 'PROTOBUF',
+    KEY_FORMAT = 'KAFKA'
+) AS
+SELECT
+    order_id,
+    status,
+    customer->id AS customer_id,
+    customer->name AS customer_name,
+    customer->email AS customer_email,
+    factory->name AS factory_name
+FROM customer_order_status_tbl;
+
+SELECT
+    customer_id,
+    customer_name,
+    customer_email,
+    count(*) AS order_count
+FROM customer_order_statuses
+GROUP BY customer_id, customer_name, customer_email
+HAVING count(*) > 1
+EMIT CHANGES;

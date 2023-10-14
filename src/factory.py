@@ -4,7 +4,8 @@ from uuid import uuid4, UUID
 from money import Money
 from enum import Enum
 from json import JSONEncoder
-import protobuf.order_pb2 as OrderPbuf
+import protobuf.order_pb2 as order_pb2
+import protobuf.customer_pb2 as customer_pb2
 import json
 
 class Cuisine(Enum):
@@ -13,12 +14,22 @@ class Cuisine(Enum):
     Southern = 3
     Beverage = 4
 
+
 class Customer:
     def __init__(self, name: str, email: str, zip_code: str):
         self.id = uuid.uuid5(uuid.NAMESPACE_URL, email)
         self.name = name
         self.email = email
         self.zip_code = zip_code
+
+    def as_protobuf(self):
+        buf = customer_pb2.Customer()
+        buf.id = str(self.id)
+        buf.name = self.name
+        buf.email = self.email
+        buf.zip_code = self.zip_code
+
+        return buf
 
 
 class Item:
@@ -44,6 +55,10 @@ class LineItem:
     @property
     def unit_price(self) -> Money:
         return self.item.price
+
+    @property
+    def currency(self) -> str:
+        return self.item.price.currency
 
     @property
     def as_dict(self) -> dict:
@@ -109,17 +124,17 @@ class Order:
 
     @property
     def as_protobuf(self):
-        buf = OrderPbuf.Order()
+        buf = order_pb2.Order()
         buf.id = str(self.id)
 
         for li in self.line_items:
             line_item = buf.line_items.add()
             line_item.id = str(li.id)
             line_item.name = li.item.name
-            line_item.unit_price = str(li.unit_price)
+            line_item.unit_price = str(li.unit_price.amount)
             line_item.quantity = li.quantity
-            line_item.price = str(li.price)
-
+            line_item.price = str(li.price.amount)
+            line_item.currency = li.currency
         buf.customer.id = str(self.customer.id)
         buf.customer.name = self.customer.name
         buf.customer.email = self.customer.email

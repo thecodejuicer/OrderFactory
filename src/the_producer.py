@@ -14,6 +14,7 @@ from confluent_kafka.serialization import StringSerializer, SerializationContext
 from money import Money
 
 import protobuf.order_pb2 as order_pb2
+import protobuf.customer_pb2 as customer_pb2
 from factory import Order, LineItem, Item, Customer, FactoryLocation, Cuisine
 from schema import MenuItem, City
 
@@ -23,6 +24,9 @@ factories = dict[str, list[FactoryLocation]]()
 customers = list[Customer]()
 menu_items = list[MenuItem]()
 
+kafka_config = {
+    'bootstrap.servers': '127.0.0.1:9092',
+}
 
 def acked(err, msg):
     if err is not None:
@@ -44,8 +48,16 @@ def delivery_report(err, msg):
     if err is not None:
         print("Delivery failed for User record {}: {}".format(msg.key(), err))
         return
-    print('User record {} successfully produced to {} [{}] at offset {}'.format(
-        msg.key(), msg.topic(), msg.partition(), msg.offset()))
+
+    # print('User record {} successfully produced to {} [{}] at offset {}'.format(
+    #     msg.key(), msg.topic(), msg.partition(), msg.offset()))
+
+
+def get_protobuf_serializer(protobuf_schema) -> ProtobufSerializer:
+    schema_registry_conf = {'url': 'http://127.0.0.1:8081'}
+    schema_registry_client = SchemaRegistryClient(schema_registry_conf)
+
+    return ProtobufSerializer(protobuf_schema, schema_registry_client, {'use.deprecated.format': False})
 
 
 def mock_orders(exiting_event):
@@ -55,21 +67,14 @@ def mock_orders(exiting_event):
     hispanic = [menu_item for menu_item in menu_items if menu_item.cuisine == Cuisine.Hispanic.name]
     italian = [menu_item for menu_item in menu_items if menu_item.cuisine == Cuisine.Italian.name]
 
-    # region Kafka config
-    kafka_config = {
-        'bootstrap.servers': '127.0.0.1:9092',
-    }
     producer = Producer(kafka_config)
-    schema_registry_conf = {'url': 'http://127.0.0.1:8081'}
-    schema_registry_client = SchemaRegistryClient(schema_registry_conf)
 
-    protobuf_serializer = ProtobufSerializer(order_pb2.Order, schema_registry_client,
-                                             {'use.deprecated.format': False})
     string_serializer = StringSerializer()
-    # endregion Kafka config
 
     factory_count = len(factories)
     customer_count = len(customers)
+
+    protobuf_serializer = get_protobuf_serializer(order_pb2.Order)
 
     # Begin data generation
     while not exiting_event.is_set():
@@ -132,6 +137,15 @@ def serialize_order(factory: FactoryLocation, order: Order) -> order_pb2.Order:
 
     return order_buf
 
+def serialize_customer(customer: Customer) -> customer_pb2.Customer:
+    """
+    Creates a protobuf serialized object from a customer.
+    :param customer: The customer
+    :return: The customer protobuf object
+    """
+    return customer.as_protobuf()
+
+
 
 def load_cities() -> list[City]:
     """
@@ -183,12 +197,17 @@ def load_factories() -> dict[str, list[FactoryLocation]]:
 
 
 def load_customers() -> list[Customer]:
+    """
+    Read customers from the resource file and load them into a topic.
+    :return: List of customers.
+    """
     with open(script_directory + '/../resources/customers_with_zip.json', mode='r') as f:
         customer_list = json.load(f)
+
         for customer in customer_list:
-            customers.append(
-                Customer(name=f"{customer['first_name']} {customer['last_name']}", email=customer['email'],
-                         zip_code=customer['zip_code']))
+            customer_obj = Customer(name=f"{customer['first_name']} {customer['last_name']}", email=customer['email'],
+                                    zip_code=customer['zip_code'])
+            customers.append(customer_obj)
 
     return customers
 
@@ -210,10 +229,11 @@ if __name__ == '__main__':
     signal.signal(signal.SIGTERM, signal_handler)
 
     with ThreadPoolExecutor(max_workers=1) as executor:
-        executor.submit(mock_orders, exiting)
+        future = executor.submit(mock_orders, exiting)
 
         try:
             while not exiting.is_set():
                 pass
         except KeyboardInterrupt:
+            print(future.result())
             exiting.set()
