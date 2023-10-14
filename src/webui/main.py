@@ -28,6 +28,9 @@ async def customer_view(request: Request):
     )
 
 
+@app.get("/orders", response_class=HTMLResponse)
+
+
 @app.get("/customer_ws")
 async def customer_ws(websocket: WebSocket):
     await websocket.accept()

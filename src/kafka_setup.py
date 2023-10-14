@@ -100,7 +100,17 @@ def create_ksql_objects():
 
 
 def create_connectors():
+    """
+    Creates all the connectors. It uses PUT on purpose, just in case the connector already exists.
+    """
     endpoint = 'http://localhost:8083/connectors'
+
+    with open(script_directory + '\..\kafka_connect\mongodb.json') as cfile:
+        connect_config = cfile.read()
+        response = requests.put(url=endpoint + '/mongodb_sink/config', data=connect_config,
+                                headers={'Content-Type': 'application/json'})
+
+        print(response.text)
 
     with open(script_directory + '\..\kafka_connect\mongodb.json') as cfile:
         connect_config = cfile.read()
