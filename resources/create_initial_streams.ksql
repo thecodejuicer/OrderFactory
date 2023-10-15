@@ -8,3 +8,44 @@ INSERT INTO all_orders_stream SELECT * FROM tennessee_baked_chicken_orders_strea
 
 CREATE TABLE IF NOT EXISTS customer_order_status_tbl ( order_id VARCHAR PRIMARY KEY, status VARCHAR, customer STRUCT<id VARCHAR, name VARCHAR, email VARCHAR>, factory STRUCT<name VARCHAR> ) WITH ( KAFKA_TOPIC = 'all_orders_stream', VALUE_FORMAT = 'PROTOBUF', KEY_FORMAT = 'KAFKA' );
 CREATE OR REPLACE TABLE customer_order_statuses WITH ( KAFKA_TOPIC = 'customer_order_statuses', VALUE_FORMAT = 'PROTOBUF', KEY_FORMAT = 'KAFKA' ) AS SELECT order_id, status, customer->id AS customer_id, customer->name AS customer_name, customer->email AS customer_email, factory->name AS factory_name FROM customer_order_status_tbl;
+
+CREATE STREAM all_line_items AS
+SELECT order_id,
+       EXPLODE(line_items) AS line_item
+FROM all_orders_stream
+EMIT CHANGES;
+
+---------------------------------------------------------
+-- Internal Order Status tables
+---------------------------------------------------------
+CREATE TABLE order_statuses_internal
+(
+    order_id VARCHAR PRIMARY KEY,
+    customer STRUCT <id VARCHAR>,
+    factory STRUCT <id VARCHAR>,
+    line_items ARRAY<
+            STRUCT<
+                name VARCHAR,
+                quantity INT
+            >
+        >,
+    status VARCHAR
+) WITH (
+    KAFKA_TOPIC = 'all_orders_stream',
+    VALUE_FORMAT = 'PROTOBUF',
+    KEY_FORMAT = 'KAFKA'
+);
+
+CREATE TABLE order_statuses_internal_tbl
+WITH (
+    KAFKA_TOPIC = 'order_statuses_internal',
+    VALUE_FORMAT = 'PROTOBUF',
+    KEY_FORMAT = 'KAFKA'
+) AS
+SELECT
+    osi.order_id,
+    osi.status,
+    osi.customer->id AS customer_id,
+    osi.factory->id AS factory_id,
+    osi.line_items
+FROM order_statuses_internal osi;

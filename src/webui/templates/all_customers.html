@@ -7,7 +7,7 @@
     <link href="{{ url_for('static', path='/css/bootstrap.min.css') }}" rel="stylesheet">
 </head>
 <body>
-<div class="container text-center">
+<div class="container-fluid text-center">
     <div class="row">
         <div class="col bg-dark-subtle">
             <h1 class="display-6">Customers</h1>
@@ -18,16 +18,16 @@
             <table class="table table-striped">
                 <thead>
                 <tr>
-                    <th>ID</th>
+                    <!--                    <th>ID</th>-->
                     <th>Name</th>
                     <th>E-mail</th>
                     <th>Zip code</th>
                 </tr>
                 </thead>
                 <tbody>
-                {% for customer in customers %}
+                {% for customer in customers.items %}
                 <tr>
-                    <td>{{ customer.id }}</td>
+                    <!--                    <td>{{ customer.id }}</td>-->
                     <td>{{ customer.name }}</td>
                     <td>{{ customer.email }}</td>
                     <td>{{ customer.zip_code }}</td>
@@ -38,18 +38,31 @@
         </div>
     </div>
     <div class="row text-center">
-        <nav aria-label="Page navigation example">
-            <ul class="pagination">
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
                 <li class="page-item">
-                    <a aria-label="Previous" class="page-link" href="#">
+                    <a aria-label="First"
+                       class="page-link {% if customers.links.prev is none %}disabled{% endif %}"
+                       href="{{ customers.links.first }}">
                         <span aria-hidden="true">&laquo;</span>
                     </a>
                 </li>
-                <li class="page-item"><a class="page-link" href="#">1</a></li>
-                <li class="page-item"><a class="page-link" href="#">2</a></li>
-                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                {% if customers.links.prev is not none %}
+                <li class="page-item"><a class="page-link" href="{{ customers.links.prev }}">{{ customers.page - 1
+                    }}</a></li>
+                {% endif %}
+
+                <li class="page-item active"><span class="page-link">{{ customers.page }}</span></li>
+
+                {% if customers.links.next is not none %}
+                <li class="page-item"><a class="page-link" href="{{ customers.links.next }}">{{ customers.page + 1
+                    }}</a></li>
+                {% endif %}
+
                 <li class="page-item">
-                    <a aria-label="Next" class="page-link" href="#">
+                    <a aria-label="Last"
+                       class="page-link {% if customers.links.next is none %}disabled{% endif %}"
+                       href="{{ customers.links.last }}">
                         <span aria-hidden="true">&raquo;</span>
                     </a>
                 </li>

@@ -1,8 +1,7 @@
 import json
 
 import uvicorn
-from fastapi import FastAPI, Request, WebSocket
-from fastapi.encoders import jsonable_encoder
+from fastapi import FastAPI, Request, WebSocket, Query
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -12,6 +11,10 @@ from fastapi_pagination.links import Page
 from motor import motor_asyncio
 
 from models import Customer
+
+Page = Page.with_custom_options(
+    size=Query(20, ge=1, le=50)
+)
 
 app = FastAPI()
 
@@ -30,7 +33,7 @@ async def all_customers_view(request: Request):
 
     return templates.TemplateResponse(
         name="all_customers.html",
-        context={"request": request, "customers": jsonable_encoder(customers_paged)['items']}
+        context={"request": request, "customers": customers_paged}
     )
 
 

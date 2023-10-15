@@ -1,0 +1,31 @@
+CREATE TABLE order_statuses_internal
+(
+    order_id VARCHAR PRIMARY KEY,
+    customer STRUCT <id VARCHAR>,
+    factory STRUCT <id VARCHAR>,
+    line_items ARRAY<
+            STRUCT<
+                name VARCHAR,
+                quantity INT
+            >
+        >,
+    status VARCHAR
+) WITH (
+    KAFKA_TOPIC = 'all_orders_stream',
+    VALUE_FORMAT = 'PROTOBUF',
+    KEY_FORMAT = 'KAFKA'
+);
+
+CREATE TABLE order_statuses_internal_tbl
+WITH (
+    KAFKA_TOPIC = 'order_statuses_internal',
+    VALUE_FORMAT = 'PROTOBUF',
+    KEY_FORMAT = 'KAFKA'
+) AS
+SELECT
+    osi.order_id,
+    osi.status,
+    osi.customer->id AS customer_id,
+    osi.factory->id AS factory_id,
+    osi.line_items
+FROM order_statuses_internal osi;
