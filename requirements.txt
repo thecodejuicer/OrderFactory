@@ -9,3 +9,5 @@ pydantic
 pymongo[srv]
 docker
 jinja2
+fastapi_pagination
+motor
