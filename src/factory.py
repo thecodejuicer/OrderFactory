@@ -146,7 +146,7 @@ class Order:
 
 class FactoryLocation:
     def __init__(self, name: str, state: str, city: str, zip_code: str, cuisine: str):
-        self.id = uuid4()
+        self.id = uuid.uuid5(uuid.NAMESPACE_URL, name + zip_code)
         self.name = name
         self.state = state
         self.city = city

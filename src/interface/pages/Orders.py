@@ -45,5 +45,5 @@ while True:
         df['LINE_ITEMS'] = df['LINE_ITEMS'].apply(lambda x: [f"{li['NAME']}: {li['QUANTITY']}" for li in x])
         df['ORDER_DATE'] = df['ORDER_DATE'].apply(lambda x: datetime.fromtimestamp(x/1000))
         df['CUSTOMER'] = df['CUSTOMER'].apply(lambda x: f"{x['NAME']} ({x['EMAIL']})")
-        st.dataframe(df[['ORDER_DATE','LINE_ITEMS','CUSTOMER']])
+        st.dataframe(df[['ORDER_DATE','LINE_ITEMS','CUSTOMER']],hide_index=True)
         time.sleep(1)
