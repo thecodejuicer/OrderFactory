@@ -1,0 +1,12 @@
+{
+  "connector.class":"com.mongodb.kafka.connect.MongoSinkConnector",
+  "connection.uri":"mongodb://localroot:asjf84q24jtr@mongo:27017",
+  "database":"kafka",
+  "collection":"all_orders",
+  "topics":"all_orders_stream",
+  "value.converter": "io.confluent.connect.protobuf.ProtobufConverter",
+  "value.converter.schema.registry.url": "http://schema-registry:8081",
+  "document.id.strategy": "com.mongodb.kafka.connect.sink.processor.id.strategy.PartialValueStrategy",
+  "document.id.strategy.partial.value.projection.list": "ID",
+  "document.id.strategy.partial.value.projection.type": "AllowList"
+}

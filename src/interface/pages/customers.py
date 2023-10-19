@@ -19,13 +19,12 @@ def init_connection() -> MongoClient:
 client = init_connection()
 
 
-# @st.cache_data(ttl=1)
+@st.cache_data(ttl=1)
 def get_data():
     db = client.kafka
-    # items = db.customers.find({},{"_id":0}).limit(10)
     items = db.all_orders.aggregate([
         {
-            '$limit': 10
+            '$limit': 100
         }, {
             '$group': {
                 '_id': None,

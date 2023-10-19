@@ -143,7 +143,7 @@ services:
       - 27017:27017
     environment:
       MONGO_INITDB_ROOT_USERNAME: localroot
-      #  If you want to change the mongo password, make sure you update it in kafka_connect/mongodb.json as well.
+      #  If you want to change the mongo password, make sure you update it in kafka_connect/mongo_all_orders_stream.json as well.
       MONGO_INITDB_ROOT_PASSWORD: asjf84q24jtr
 
   mongo-express:

@@ -47,10 +47,50 @@ def state_totals(company_name: str):
                 '_id': 1
             }
         }, {
-            '$addFields': { 'state': '$_id' }
+            '$addFields': {'state': '$_id'}
         }, {
             '$project': {
                 '_id': 0
             }
         }
     ]
+
+
+def item_order_totals(company_name: str = None):
+    aggregator = []
+
+    if company_name is not None:
+        aggregator.append({
+            '$match': {
+                'FACTORY': company_name
+            }
+        })
+
+    aggregator = aggregator + [{
+        '$group': {
+            '_id': {
+                'FACTORY': '$FACTORY',
+                'STATE': '$STATE',
+                'ITEM': '$ITEM.NAME'
+            },
+            'REVENUE': {
+                '$sum': {
+                    '$toDouble': '$ITEM.PRICE'
+                }
+            },
+            'QUANTITY_SOLD': {
+                '$sum': '$ITEM.QUANTITY'
+            }
+        }
+    }, {
+        '$project': {
+            '_id': 0,
+            'FACTORY': '$_id.FACTORY',
+            'STATE': '$_id.STATE',
+            'ITEM': '$_id.ITEM',
+            'REVENUE': 1,
+            'QUANTITY_SOLD': 1
+        }
+    }]
+
+    return aggregator
