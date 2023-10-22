@@ -83,9 +83,12 @@ class OrderStatus(Enum):
 
 
 class Order:
-    def __init__(self, customer: Customer, id: uuid = uuid4(), status: OrderStatus = OrderStatus.NEW,
+    def __init__(self, customer: Customer, id: uuid = None, status: OrderStatus = OrderStatus.NEW,
                  line_items: list[LineItem] = None):
-        self.id = id
+        if id is None:
+            self.id = uuid.uuid4()
+        else:
+            self.id = id
         if line_items is None:
             self.line_items = list[LineItem]()
         else:

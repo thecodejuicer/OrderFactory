@@ -6,6 +6,7 @@ import signal
 import sys
 import threading
 import time
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 from time import sleep
 
@@ -80,6 +81,7 @@ def mock_orders(exiting_event):
 
     # Begin data generation
     while not exiting_event.is_set():
+        random.seed()
         customer = customers[random.randint(0, customer_count - 1)]
         # Select a random "factory"
         factory_locations = factories[list(factories.keys())[random.randint(0, factory_count - 1)]]
@@ -101,7 +103,7 @@ def mock_orders(exiting_event):
         items_count = len(item_list)
 
         # Create a new order for a random customer.
-        order = Order(customer)
+        order = Order(customer, id=uuid.uuid4())
         random_item = item_list[random.randint(0, items_count - 1)]
         random_beverage = beverages[random.randint(0, len(beverages) - 1)]
 
