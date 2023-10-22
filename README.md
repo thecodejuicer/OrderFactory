@@ -38,7 +38,7 @@ Conda, so I don't recommend it for this demo. If you know how to make it work, g
 5. Run `python src/kafka_setup.py`. That will create all the Kafka, ksqlDB and Connect objects.
 6. Run `python src/the_producer.py`. This will begin simulating customer orders. There is an issue where it doesn't
    always respond to CTRL+C to end the process. You may have to close the terminal instead when you want to close it.
-7. In a separate terminal, from the "src/interface" folder run `streamlit run streamlit_app.py`
+7. In a separate terminal, from the "src" folder run `streamlit run streamlit_app.py`
 
 Everything should be running at this point.
 
