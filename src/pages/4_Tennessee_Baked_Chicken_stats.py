@@ -23,7 +23,8 @@ def init_connection() -> MongoClient:
 
 client = init_connection()
 
-@st.cache_data(ttl=5)
+
+@st.cache_data(ttl=1)
 def get_tbc_item_sales_data():
     db = client.kafka
     items = db.anonymized_orders_by_state.aggregate(item_order_totals(company_name))
@@ -58,4 +59,4 @@ while True:
 
         st.altair_chart(chart, theme='streamlit', use_container_width=True)
 
-        time.sleep(5)
+        time.sleep(1)
