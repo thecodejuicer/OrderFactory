@@ -1,4 +1,5 @@
 import time
+import uuid
 from datetime import datetime
 import streamlit as st
 import pymongo
@@ -37,13 +38,12 @@ column_config = {
     "CUSTOMER": "Customer"
 }
 
-while True:
-    with placeholder.container():
-
-
-        df = pd.DataFrame(get_data())
-        df['LINE_ITEMS'] = df['LINE_ITEMS'].apply(lambda x: [f"{li['NAME']}: {li['QUANTITY']}" for li in x])
-        df['ORDER_DATE'] = df['ORDER_DATE'].apply(lambda x: datetime.fromtimestamp(x/1000))
-        df['CUSTOMER'] = df['CUSTOMER'].apply(lambda x: f"{x['NAME']} ({x['EMAIL']})")
-        st.dataframe(df[['ORDER_DATE','LINE_ITEMS','CUSTOMER']],hide_index=True)
-        time.sleep(1)
+with placeholder.container():
+    df = pd.DataFrame(get_data())
+    df['LINE_ITEMS'] = df['LINE_ITEMS'].apply(lambda x: [f"{li['NAME']}: {li['QUANTITY']}" for li in x])
+    df['ORDER_DATE'] = df['ORDER_DATE'].apply(lambda x: datetime.fromtimestamp(x / 1000))
+    df['Customer View'] = df['CUSTOMER'].apply(
+        lambda x: '<a href="Customer_Orders?ID={}" target="_self">Customer View</a>'.format(x['ID']))
+    df['CUSTOMER'] = df['CUSTOMER'].apply(lambda x: f"{x['NAME']} ({x['EMAIL']})")
+    st.write(df[['ORDER_DATE', 'LINE_ITEMS', 'CUSTOMER', 'Customer View']].to_html(escape=False, index=False),
+             unsafe_allow_html=True)

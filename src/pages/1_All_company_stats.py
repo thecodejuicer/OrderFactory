@@ -52,6 +52,7 @@ def get_all_item_sales_data():
 
 st.sidebar.markdown(f"# {company_name}")
 st.header("All Company", divider='blue')
+st.markdown('![Nom Nom Brands.](app/static/nom_nom_logo.png)')
 
 placeholder = st.empty()
 
