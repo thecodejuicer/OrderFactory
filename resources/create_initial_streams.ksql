@@ -128,4 +128,4 @@ SELECT
     FACTORY->NAME       AS FACTORY,
     FACTORY->STATE      AS STATE,
     EXPLODE(LINE_ITEMS) AS ITEM
-FROM orders_no_customer_stream;
+FROM orders_no_customer_streama;

@@ -1,0 +1,41 @@
+CREATE STREAM customer_order_stream
+(
+    ID VARCHAR,
+    ORDER_DATE BIGINT,
+    STATUS VARCHAR,
+    CUSTOMER STRUCT<ID VARCHAR,
+                    NAME VARCHAR,
+                    EMAIL VARCHAR>,    
+    FACTORY STRUCT<NAME VARCHAR,
+                   CITY VARCHAR,
+                   STATE VARCHAR,
+                   ZIP_CODE VARCHAR>,
+    LINE_ITEMS ARRAY<
+        STRUCT<NAME VARCHAR,
+               QUANTITY INT,
+               PRICE VARCHAR>>        
+) WITH (
+    KAFKA_TOPIC='all_orders_stream',
+    VALUE_FORMAT='PROTOBUF',
+    KEY_FORMAT='KAFKA'
+);
+
+CREATE STREAM customer_order_status
+WITH (
+    KAFKA_TOPIC = 'customer_order_status',
+    VALUE_FORMAT = 'PROTOBUF',
+    KEY_FORMAT = 'KAFKA'
+) AS
+SELECT ID,
+       ORDER_DATE,
+       CUSTOMER->ID AS CUSTOMER_ID,
+       CUSTOMER->NAME AS CUSTOMER_NAME,
+       CUSTOMER->EMAIL AS CUSTOMER_EMAIL,
+       FACTORY->NAME AS FACTORY_NAME,
+       FACTORY->CITY AS FACTORY_CITY,
+       FACTORY->STATE AS FACTORY_STATE,
+       FACTORY->ZIP_CODE AS FACTORY_ZIP_CODE,
+       LINE_ITEMS AS ITEMS,
+       STATUS
+FROM customer_order_stream
+emit changes;

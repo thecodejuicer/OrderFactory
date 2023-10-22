@@ -1,0 +1,49 @@
+-- Remove the customer to anonymize the data.
+CREATE STREAM orders_no_customer_stream
+(
+    ID VARCHAR,
+    ORDER_DATE BIGINT,
+    STATUS VARCHAR,
+    FACTORY STRUCT<NAME VARCHAR,
+                   CITY VARCHAR,
+                   STATE VARCHAR,
+                   ZIP_CODE VARCHAR>,
+    LINE_ITEMS ARRAY<
+        STRUCT<NAME VARCHAR,
+               QUANTITY INT,
+               PRICE VARCHAR>>     
+) WITH (
+    KAFKA_TOPIC='all_orders_stream',
+    VALUE_FORMAT='PROTOBUF',
+    KEY_FORMAT='KAFKA'
+);
+
+CREATE STREAM orders_and_items_by_state_stream
+WITH (
+    KAFKA_TOPIC='orders_and_items_by_state_stream',
+    VALUE_FORMAT = 'PROTOBUF',
+    KEY_FORMAT = 'KAFKA'    
+) AS
+SELECT
+    ID,
+    ORDER_DATE,
+    FACTORY->NAME       AS FACTORY,
+    FACTORY->STATE      AS STATE,
+    EXPLODE(LINE_ITEMS) AS ITEM
+FROM orders_no_customer_stream
+PARTITION BY ID;
+
+
+CREATE TABLE orders_and_items_by_state
+WITH (KAFKA_TOPIC = 'orders_and_items_by_state',
+      KEY_FORMAT = 'JSON') AS
+SELECT
+    FORMAT_TIMESTAMP(FROM_UNIXTIME(ORDER_DATE), 'yyyy-MM-dd'),
+    FACTORY,
+    STATE,
+    ITEM->NAME AS ITEM_NAME,
+    SUM(CAST(ITEM->PRICE AS DECIMAL(12,2))) AS REVENUE,
+    SUM(ITEM->QUANTITY) AS QUANTITY
+FROM orders_and_items_by_state_stream
+GROUP BY FORMAT_TIMESTAMP(FROM_UNIXTIME(ORDER_DATE), 'yyyy-MM-dd'), FACTORY, STATE, ITEM->NAME
+EMIT CHANGES;
