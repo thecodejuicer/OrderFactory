@@ -29,4 +29,5 @@ message Order {
   Customer customer = 3;
   string status = 4;
   Factory factory = 5;
+  int64 order_date = 6;
 }

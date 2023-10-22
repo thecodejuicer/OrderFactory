@@ -1,9 +1,11 @@
 import json
+import math
 import os
 import random
 import signal
 import sys
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 from time import sleep
 
@@ -13,8 +15,8 @@ from confluent_kafka.schema_registry.protobuf import ProtobufSerializer
 from confluent_kafka.serialization import StringSerializer, SerializationContext, MessageField
 from money import Money
 
-import protobuf.order_pb2 as order_pb2
 import protobuf.customer_pb2 as customer_pb2
+import protobuf.order_pb2 as order_pb2
 from factory import Order, LineItem, Item, Customer, FactoryLocation, Cuisine
 from schema import MenuItem, City
 
@@ -118,7 +120,7 @@ def mock_orders(exiting_event):
         producer.flush()
 
         # Add a short pause, so it isn't a crazy bombardment
-        sleep(random.uniform(0.03, 0.5))
+        sleep(random.uniform(0.1, 1.0))
 
 
 def serialize_order(factory: FactoryLocation, order: Order) -> order_pb2.Order:
@@ -134,6 +136,7 @@ def serialize_order(factory: FactoryLocation, order: Order) -> order_pb2.Order:
     order_buf.factory.city = factory.city
     order_buf.factory.state = factory.state
     order_buf.factory.zip_code = factory.zip_code
+    order_buf.order_date = math.floor(time.time_ns() / 1000000)
 
     return order_buf
 

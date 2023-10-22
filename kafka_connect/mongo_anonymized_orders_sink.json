@@ -2,12 +2,11 @@
   "connector.class": "com.mongodb.kafka.connect.MongoSinkConnector",
   "connection.uri": "mongodb://localroot:asjf84q24jtr@mongo:27017",
   "database": "kafka",
-  "collection": "customers",
-  "topics": "customers",
+  "collection": "anonymized_orders_by_state",
+  "topics": "orders_and_items_by_state_stream",
   "value.converter": "io.confluent.connect.protobuf.ProtobufConverter",
   "value.converter.schema.registry.url": "http://schema-registry:8081",
   "document.id.strategy": "com.mongodb.kafka.connect.sink.processor.id.strategy.PartialValueStrategy",
-  "document.id.strategy.partial.value.projection.list": "id",
-  "document.id.strategy.partial.value.projection.type": "AllowList",
-  "writemodel.strategy": "com.mongodb.kafka.connect.sink.writemodel.strategy.ReplaceOneBusinessKeyStrategy"
+  "document.id.strategy.partial.value.projection.list": "ID,ITEM.NAME",
+  "document.id.strategy.partial.value.projection.type": "AllowList"
 }

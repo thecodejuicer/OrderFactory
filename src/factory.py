@@ -33,8 +33,8 @@ class Customer:
 
 
 class Item:
-    def __init__(self, name: str, price: Money, description: str = None):
-        self.id = uuid4()
+    def __init__(self, name: str, price: Money, description: str = None, id: UUID = uuid4()):
+        self.id = id
         self.name = name
         self.price = price
         self.description = description
@@ -83,11 +83,15 @@ class OrderStatus(Enum):
 
 
 class Order:
-    def __init__(self, customer: Customer):
-        self.id = uuid4()
-        self.line_items = list[LineItem]()
+    def __init__(self, customer: Customer, id: uuid = uuid4(), status: OrderStatus = OrderStatus.NEW,
+                 line_items: list[LineItem] = None):
+        self.id = id
+        if line_items is None:
+            self.line_items = list[LineItem]()
+        else:
+            self.line_items = line_items
         self.customer = customer
-        self._status: OrderStatus = OrderStatus.NEW
+        self._status = status
 
     @property
     def total(self) -> Money:
@@ -146,7 +150,7 @@ class Order:
 
 class FactoryLocation:
     def __init__(self, name: str, state: str, city: str, zip_code: str, cuisine: str):
-        self.id = uuid4()
+        self.id = uuid.uuid5(uuid.NAMESPACE_URL, name + zip_code)
         self.name = name
         self.state = state
         self.city = city

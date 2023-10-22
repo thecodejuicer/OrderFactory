@@ -105,16 +105,30 @@ def create_connectors():
     """
     endpoint = 'http://localhost:8083/connectors'
 
-    with open(script_directory + '\..\kafka_connect\mongodb.json') as cfile:
+    with open(script_directory + '\..\kafka_connect\mongo_all_orders_stream.json') as cfile:
         connect_config = cfile.read()
         response = requests.put(url=endpoint + '/mongodb_sink/config', data=connect_config,
                                 headers={'Content-Type': 'application/json'})
 
         print(response.text)
 
-    with open(script_directory + '\..\kafka_connect\mongodb.json') as cfile:
+    with open(script_directory + '\..\kafka_connect\customer_stream.json') as cfile:
         connect_config = cfile.read()
-        response = requests.put(url=endpoint + '/mongodb_sink/config', data=connect_config,
+        response = requests.put(url=endpoint + '/mongodb_customer_sink/config', data=connect_config,
+                                headers={'Content-Type': 'application/json'})
+
+        print(response.text)
+
+    with open(script_directory + '\..\kafka_connect\customer_order_sink.json') as cfile:
+        connect_config = cfile.read()
+        response = requests.put(url=endpoint + '/mongodb_customer_order_sink/config', data=connect_config,
+                                headers={'Content-Type': 'application/json'})
+
+        print(response.text)
+
+    with open(script_directory + '\..\kafka_connect\mongo_anonymized_orders_sink.json') as cfile:
+        connect_config = cfile.read()
+        response = requests.put(url=endpoint + '/mongodb_anonymized_order_sink/config', data=connect_config,
                                 headers={'Content-Type': 'application/json'})
 
         print(response.text)

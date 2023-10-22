@@ -6,5 +6,126 @@ CREATE OR REPLACE STREAM all_orders_stream WITH ( KAFKA_TOPIC = 'all_orders_stre
 INSERT INTO all_orders_stream SELECT * FROM pizza_cabin_orders_stream emit changes;
 INSERT INTO all_orders_stream SELECT * FROM tennessee_baked_chicken_orders_stream emit changes;
 
-CREATE TABLE IF NOT EXISTS customer_order_status_tbl ( order_id VARCHAR PRIMARY KEY, status VARCHAR, customer STRUCT<id VARCHAR, name VARCHAR, email VARCHAR>, factory STRUCT<name VARCHAR> ) WITH ( KAFKA_TOPIC = 'all_orders_stream', VALUE_FORMAT = 'PROTOBUF', KEY_FORMAT = 'KAFKA' );
-CREATE OR REPLACE TABLE customer_order_statuses WITH ( KAFKA_TOPIC = 'customer_order_statuses', VALUE_FORMAT = 'PROTOBUF', KEY_FORMAT = 'KAFKA' ) AS SELECT order_id, status, customer->id AS customer_id, customer->name AS customer_name, customer->email AS customer_email, factory->name AS factory_name FROM customer_order_status_tbl;
+-- CREATE TABLE IF NOT EXISTS customer_order_status_tbl ( order_id VARCHAR PRIMARY KEY, status VARCHAR, customer STRUCT<id VARCHAR, name VARCHAR, email VARCHAR>, factory STRUCT<name VARCHAR> ) WITH ( KAFKA_TOPIC = 'all_orders_stream', VALUE_FORMAT = 'PROTOBUF', KEY_FORMAT = 'KAFKA' );
+-- CREATE OR REPLACE TABLE customer_order_statuses WITH ( KAFKA_TOPIC = 'customer_order_statuses', VALUE_FORMAT = 'PROTOBUF', KEY_FORMAT = 'KAFKA' ) AS SELECT order_id, status, customer->id AS customer_id, customer->name AS customer_name, customer->email AS customer_email, factory->name AS factory_name FROM customer_order_status_tbl;
+
+-- CREATE STREAM IF NOT EXISTS all_line_items AS
+-- SELECT order_id,
+--        EXPLODE(line_items) AS line_item
+-- FROM all_orders_stream
+-- EMIT CHANGES;
+
+---------------------------------------------------------
+-- Internal Order Status tables
+---------------------------------------------------------
+CREATE TABLE IF NOT EXISTS order_statuses_internal
+(
+    order_id VARCHAR PRIMARY KEY,
+    customer STRUCT <id VARCHAR>,
+    factory STRUCT <id VARCHAR>,
+    line_items ARRAY<
+            STRUCT<
+                name VARCHAR,
+                quantity INT
+            >
+        >,
+    status VARCHAR
+) WITH (
+    KAFKA_TOPIC = 'all_orders_stream',
+    VALUE_FORMAT = 'PROTOBUF',
+    KEY_FORMAT = 'KAFKA'
+);
+
+CREATE OR REPLACE TABLE order_statuses_internal_tbl
+WITH (
+    KAFKA_TOPIC = 'order_statuses_internal',
+    VALUE_FORMAT = 'PROTOBUF',
+    KEY_FORMAT = 'KAFKA'
+) AS
+SELECT
+    osi.order_id,
+    osi.status,
+    osi.customer->id AS customer_id,
+    osi.factory->id AS factory_id,
+    osi.line_items
+FROM order_statuses_internal osi;
+
+---------------------------------------------------------
+-- Streams for customer facing stuff
+---------------------------------------------------------
+CREATE STREAM IF NOT EXISTS customer_order_stream
+(
+    ID VARCHAR,
+    ORDER_DATE BIGINT,
+    STATUS VARCHAR,
+    CUSTOMER STRUCT<ID VARCHAR,
+                    NAME VARCHAR,
+                    EMAIL VARCHAR>,
+    FACTORY STRUCT<NAME VARCHAR,
+                   CITY VARCHAR,
+                   STATE VARCHAR,
+                   ZIP_CODE VARCHAR>,
+    LINE_ITEMS ARRAY<
+        STRUCT<NAME VARCHAR,
+               QUANTITY INT,
+               PRICE VARCHAR>>
+) WITH (
+    KAFKA_TOPIC='all_orders_stream',
+    VALUE_FORMAT='PROTOBUF',
+    KEY_FORMAT='KAFKA'
+);
+CREATE OR REPLACE STREAM customer_order_status
+WITH (
+    KAFKA_TOPIC = 'customer_order_status',
+    VALUE_FORMAT = 'PROTOBUF',
+    KEY_FORMAT = 'KAFKA'
+) AS
+SELECT ID,
+       ORDER_DATE,
+       CUSTOMER->ID AS CUSTOMER_ID,
+       CUSTOMER->NAME AS CUSTOMER_NAME,
+       CUSTOMER->EMAIL AS CUSTOMER_EMAIL,
+       FACTORY->NAME AS FACTORY_NAME,
+       FACTORY->CITY AS FACTORY_CITY,
+       FACTORY->STATE AS FACTORY_STATE,
+       FACTORY->ZIP_CODE AS FACTORY_ZIP_CODE,
+       LINE_ITEMS AS ITEMS,
+       STATUS
+FROM customer_order_stream
+emit changes;
+
+---------------------------------------------------------
+-- Anonymized streams and tables
+---------------------------------------------------------
+CREATE STREAM orders_no_customer_stream
+(
+    ID VARCHAR,
+    ORDER_DATE BIGINT,
+    STATUS VARCHAR,
+    FACTORY STRUCT<NAME VARCHAR,
+                   CITY VARCHAR,
+                   STATE VARCHAR,
+                   ZIP_CODE VARCHAR>,
+    LINE_ITEMS ARRAY<
+        STRUCT<NAME VARCHAR,
+               QUANTITY INT,
+               PRICE VARCHAR>>
+) WITH (
+    KAFKA_TOPIC='all_orders_stream',
+    VALUE_FORMAT='PROTOBUF',
+    KEY_FORMAT='KAFKA'
+);
+
+CREATE STREAM orders_and_items_by_state_stream
+WITH (
+    KAFKA_TOPIC='orders_and_items_by_state_stream',
+    VALUE_FORMAT = 'PROTOBUF',
+    KEY_FORMAT = 'KAFKA'
+) AS
+SELECT
+    ID,
+    ORDER_DATE,
+    FACTORY->NAME       AS FACTORY,
+    FACTORY->STATE      AS STATE,
+    EXPLODE(LINE_ITEMS) AS ITEM
+FROM orders_no_customer_streama;
